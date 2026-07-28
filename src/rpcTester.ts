@@ -1,15 +1,5 @@
-import { JsonRpcProvider, Network, FetchRequest } from 'ethers'
-
-export const TEST_BLOCKS: Record<number, number> = {
-  1: 7049729,
-  11155111: 4907882,
-  17000: 2590658,
-  100: 45566242,
-  246: 15358884,
-  73799: 2003299,
-  137: 24190361,
-  1313161554: 57701343,
-}
+import {FetchRequest, JsonRpcProvider, Network} from 'ethers'
+import {TEST_BLOCKS} from "./test-blocks";
 
 export type RpcTestResult = {
   chainId: number
