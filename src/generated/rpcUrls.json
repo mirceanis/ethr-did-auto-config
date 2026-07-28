@@ -1,0 +1,29 @@
+{
+  "1": [
+    "https://eth.drpc.org",
+    "https://one.valve.city/rpc/vk_demo/evm/1",
+    "https://rpc.mevblocker.io",
+    "https://rpc-eth.blockmachine.io",
+    "https://eth.blockrazor.xyz",
+    "https://eth.api.pocket.network"
+  ],
+  "100": [
+    "https://gnosis.drpc.org",
+    "https://rpc.gnosischain.com",
+    "https://public-gno-mainnet.fastnode.io"
+  ],
+  "137": [
+    "https://polygon.drpc.org",
+    "https://poly.api.pocket.network"
+  ],
+  "246": [
+    "https://rpc.energyweb.org"
+  ],
+  "73799": [
+    "https://volta-rpc.energyweb.org"
+  ],
+  "1313161554": [
+    "https://aurora.drpc.org",
+    "https://mainnet.aurora.dev"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "ethr-did-auto-config",
+  "version": "0.0.0",
+  "description": "self-adjusting ethr-did-resolver configuration using public JSON-RPC endpoints",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "probe": "tsx src/probe.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "ethr-did-resolver": "^14.1.0",
+    "ethers": "^6.17.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.4"
+}
