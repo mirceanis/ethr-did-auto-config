@@ -1,13 +1,7 @@
-import { writeFileSync } from 'fs'
-import { resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { deployments } from 'ethr-did-resolver'
 import { FetchRequest, JsonRpcProvider, Network, id } from 'ethers'
 import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
 import { TEST_BLOCKS as EXISTING_TEST_BLOCKS } from './test-blocks.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 const RPC_TIMEOUT = 10_000
 
@@ -179,12 +173,6 @@ async function discoverBlockForChain(
   return null
 }
 
-function formatTestBlocks(blocks: Record<number, number>): string {
-  const chainIds = Object.keys(blocks).map(Number).sort((a, b) => a - b)
-  const body = chainIds.map((id) => `    ${id}: ${blocks[id]},`).join('\n')
-  return `export const TEST_BLOCKS: Record<number, number> = {\n${body}\n} as const\n`
-}
-
 export async function discoverBlocks(): Promise<Record<number, number>> {
   const existing: Record<number, number> = { ...EXISTING_TEST_BLOCKS }
 
@@ -233,9 +221,5 @@ export async function discoverBlocks(): Promise<Record<number, number>> {
   }
 
   const updated: Record<number, number> = { ...existing, ...newBlocks }
-  const outPath = resolve(__dirname, 'test-blocks.ts')
-  writeFileSync(outPath, formatTestBlocks(updated))
-  console.log(`Discover: wrote ${Object.keys(newBlocks).length} new entries to ${outPath}`)
-
   return updated
 }

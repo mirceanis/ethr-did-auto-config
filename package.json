@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "probe": "tsx src/probe.ts",
+    "probe": "tsx scripts/probe.ts",
+    "discover-blocks": "tsx scripts/discover-blocks.ts",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
