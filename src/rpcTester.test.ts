@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { testRpcUrl } from './rpcTester.js'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {testRpcUrl} from './rpcTester.js'
+import {FetchRequest, JsonRpcProvider} from 'ethers'
 
 vi.mock('ethers', async () => {
   const actual = await vi.importActual('ethers')
@@ -13,15 +14,12 @@ vi.mock('ethers', async () => {
   }
 })
 
-import { JsonRpcProvider, FetchRequest } from 'ethers'
-
 function makeMockProvider(overrides: Record<string, any> = {}) {
-  const provider = {
+  return {
     send: vi.fn(),
     destroy: vi.fn(),
     ...overrides,
   }
-  return provider
 }
 
 describe('testRpcUrl', () => {
@@ -108,7 +106,7 @@ describe('testRpcUrl', () => {
     expect(capturedReq.timeout).toBe(5_000)
   })
 
-  it('skips archival check for chains with no test block', async () => {
+  it('fails archival check for chains with no test block', async () => {
     const provider = makeMockProvider()
     provider.send
       .mockResolvedValueOnce('0x1')
@@ -116,7 +114,7 @@ describe('testRpcUrl', () => {
 
     const result = await testRpcUrl(999, 'https://example.com/rpc', '0xabc')
 
-    expect(result.ok).toBe(true)
+    expect(result.ok).toBe(false)
     expect(provider.send).toHaveBeenCalledTimes(1)
   })
 

@@ -1,5 +1,10 @@
-import {FetchRequest, JsonRpcProvider, Network} from 'ethers'
+import {FetchRequest, JsonRpcProvider, Network, id} from 'ethers'
 import {TEST_BLOCKS} from "./test-blocks";
+
+const DID_OWNER_CHANGED = id('DIDOwnerChanged(address,address,uint256)')
+const DID_DELEGATE_CHANGED = id('DIDDelegateChanged(address,bytes32,address,uint256,uint256)')
+const DID_ATTRIBUTE_CHANGED = id('DIDAttributeChanged(address,bytes32,bytes,uint256,uint256)')
+const DID_EVENT_TOPICS = [DID_OWNER_CHANGED, DID_DELEGATE_CHANGED, DID_ATTRIBUTE_CHANGED]
 
 export type RpcTestResult = {
   chainId: number
@@ -13,6 +18,7 @@ export async function testRpcUrl(
   url: string,
   registry: string,
   timeout = 5_000,
+  testBlocks?: Record<number, number>,
 ): Promise<RpcTestResult> {
   const req = new FetchRequest(url)
   req.timeout = timeout
@@ -26,24 +32,29 @@ export async function testRpcUrl(
     await provider.send('eth_blockNumber', [])
     const latencyMs = performance.now() - start
 
-    const testBlock = TEST_BLOCKS[chainId]
-    if (testBlock && testBlock > 0) {
-      try {
-        const logs = await provider.send('eth_getLogs', [
-          {
-            address: registry.toLowerCase(),
-            fromBlock: `0x${testBlock.toString(16)}`,
-            toBlock: `0x${testBlock.toString(16)}`,
-          },
-        ])
-        if (!Array.isArray(logs) || logs.length === 0) {
-          provider.destroy?.()
-          return { chainId, url, ok: false, latencyMs }
-        }
-      } catch {
+    const blocks = testBlocks ?? TEST_BLOCKS
+    const testBlock = blocks[chainId]
+    if (!testBlock || testBlock <= 0) {
+      provider.destroy?.()
+      return { chainId, url, ok: false, latencyMs }
+    }
+
+    try {
+      const logs = await provider.send('eth_getLogs', [
+        {
+          address: registry.toLowerCase(),
+          fromBlock: `0x${testBlock.toString(16)}`,
+          toBlock: `0x${testBlock.toString(16)}`,
+          topics: [DID_EVENT_TOPICS],
+        },
+      ])
+      if (!Array.isArray(logs) || logs.length === 0) {
         provider.destroy?.()
         return { chainId, url, ok: false, latencyMs }
       }
+    } catch {
+      provider.destroy?.()
+      return { chainId, url, ok: false, latencyMs }
     }
 
     provider.destroy?.()

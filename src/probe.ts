@@ -5,6 +5,8 @@ import {fileURLToPath} from 'url'
 import {deployments} from 'ethr-did-resolver'
 import {fetchRpcUrls, RpcCandidate} from './chainlist.js'
 import {testRpcUrl} from './rpcTester.js'
+import {discoverBlocks} from './discover-blocks.js'
+import {TEST_BLOCKS} from './test-blocks.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -29,6 +31,14 @@ function trackingRank(t: string | undefined): number {
 
 async function main() {
     const chainIds = deployments.map((d) => Number(d.chainId))
+
+    const missingChains = chainIds.filter(id => !(id in TEST_BLOCKS))
+    let testBlocks = { ...TEST_BLOCKS } as Record<number, number>
+    if (missingChains.length > 0) {
+        console.log(`Probe: ${missingChains.length} new network(s) without TEST_BLOCKS, discovering...`)
+        testBlocks = await discoverBlocks()
+    }
+
     console.log('Probe: loading chainlist...')
     const candidates = await fetchRpcUrls(chainIds)
     const totalCandidateUrls = Object.values(candidates).reduce((sum, urls) => sum + urls.length, 0)
@@ -46,7 +56,7 @@ async function main() {
             const url = candidate.url
             try {
                 const result = await withTimeout(
-                    testRpcUrl(Number(chainId), url, getRegistry(Number(chainId))),
+                    testRpcUrl(Number(chainId), url, getRegistry(Number(chainId)), PROBE_TIMEOUT, testBlocks),
                     PROBE_TIMEOUT,
                 )
                 const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'

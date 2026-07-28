@@ -1,7 +1,7 @@
 {
   "1": [
-    "https://one.valve.city/rpc/vk_demo/evm/1",
     "https://rpc.mevblocker.io",
+    "https://one.valve.city/rpc/vk_demo/evm/1",
     "https://eth.drpc.org",
     "https://eth.blockrazor.xyz",
     "https://ethereum-json-rpc.stakely.io",
@@ -15,15 +15,16 @@
     "https://gateway.tenderly.co/public/mainnet",
     "https://ethereum-mainnet.gateway.tatum.io",
     "https://eth1.lava.build",
+    "https://services.tokenview.io/vipapi/nodeservice/eth?apikey=qVHq2o6jpaakcw3lRstl",
     "https://public-eth.nownodes.io",
     "https://rpc-eth.blockmachine.io"
   ],
   "100": [
     "https://gnosis.drpc.org",
     "https://public-gno-mainnet.fastnode.io",
+    "https://rpc.gnosis.gateway.fm",
     "https://rpc.gnosischain.com",
     "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
-    "https://rpc.gnosis.gateway.fm",
     "https://gno-mainnet.gateway.tatum.io"
   ],
   "137": [
@@ -32,10 +33,11 @@
     "https://rpc.private.mev-x.com/polygon",
     "https://rpc.sentio.xyz/matic",
     "https://matic.rpc.sentio.xyz",
-    "https://polygon.gateway.tenderly.co",
+    "https://polygon.api.onfinality.io/public",
     "https://gateway.tenderly.co/public/polygon",
-    "https://polygon-mainnet.gateway.tatum.io",
+    "https://polygon.gateway.tenderly.co",
     "https://polygon.lava.build",
+    "https://polygon-mainnet.gateway.tatum.io",
     "https://rpc-mainnet.matic.quiknode.pro"
   ],
   "246": [
@@ -46,8 +48,8 @@
   ],
   "11155111": [
     "https://ethereum-sepolia-public.nodies.app",
-    "https://sepolia.rpc.sentio.xyz",
     "https://eth-sepolia.api.onfinality.io/public",
+    "https://sepolia.rpc.sentio.xyz",
     "https://gateway.tenderly.co/public/sepolia",
     "https://sepolia.gateway.tenderly.co"
   ],
