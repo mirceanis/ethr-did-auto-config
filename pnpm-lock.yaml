@@ -15,6 +15,9 @@ importers:
         specifier: ^14.1.0
         version: 14.1.0
     devDependencies:
+      did-resolver:
+        specifier: ^5.0.1
+        version: 5.0.1
       semantic-release:
         specifier: ^25.0.8
         version: 25.0.8(typescript@7.0.2)

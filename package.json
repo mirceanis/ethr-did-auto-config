@@ -10,13 +10,15 @@
     "test": "vitest run",
     "probe": "tsx src/scripts/probe.ts",
     "discover-blocks": "tsx src/scripts/discover-blocks.ts",
-    "release": "semantic-release --debug"
+    "release": "semantic-release --debug",
+    "resolve": "tsx src/scripts/resolve.ts"
   },
   "dependencies": {
     "ethers": "^6.17.0",
     "ethr-did-resolver": "^14.1.0"
   },
   "devDependencies": {
+    "did-resolver": "^5.0.1",
     "semantic-release": "^25.0.8",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2",
