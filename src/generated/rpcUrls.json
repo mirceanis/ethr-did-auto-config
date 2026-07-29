@@ -16,14 +16,16 @@
     "https://public-eth.nownodes.io",
     "https://eth1.lava.build",
     "https://rpc-eth.blockmachine.io",
-    "https://ethereum-public.nodies.app"
+    "https://ethereum-public.nodies.app",
+    "https://ethereum-mainnet.gateway.tatum.io"
   ],
   "100": [
     "https://gnosis.drpc.org",
     "https://public-gno-mainnet.fastnode.io",
     "https://rpc.gnosischain.com",
     "https://rpc.gnosis.gateway.fm",
-    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet"
+    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
+    "https://gno-mainnet.gateway.tatum.io"
   ],
   "137": [
     "https://polygon.drpc.org",
@@ -43,11 +45,11 @@
     "https://volta-rpc.energyweb.org"
   ],
   "11155111": [
+    "https://sepolia.gateway.tenderly.co",
+    "https://gateway.tenderly.co/public/sepolia",
     "https://eth-sepolia.api.onfinality.io/public",
     "https://ethereum-sepolia-public.nodies.app",
-    "https://sepolia.rpc.sentio.xyz",
-    "https://sepolia.gateway.tenderly.co",
-    "https://gateway.tenderly.co/public/sepolia"
+    "https://sepolia.rpc.sentio.xyz"
   ],
   "1313161554": [
     "https://aurora.drpc.org",

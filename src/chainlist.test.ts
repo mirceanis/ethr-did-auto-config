@@ -1,26 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fetchRpcUrls, type RpcCandidate } from './chainlist.js'
 
-const SAMPLE_JS = `export const extraRpcs = {
-  1: {
-    rpcs: [
-      "https://gnosischain.com/rpc",
-      { url: "https://mainnet.infura.io/v3/abc", tracking: "none" },
-      { url: "https://eth.llamarpc.com", tracking: "none" },
-      { url: "http://localhost:8545", tracking: "none" },
-      { url: "https://with-tracking.com", tracking: "yes" },
-      { url: "https://no-tracking-field.com" }
-    ]
+const SAMPLE_JSON = [
+  {
+    chainId: 1,
+    rpc: [
+      { url: 'https://gnosischain.com/rpc' },
+      { url: 'https://mainnet.infura.io/v3/abc', tracking: 'none' },
+      { url: 'https://eth.llamarpc.com', tracking: 'none' },
+      { url: 'http://localhost:8545', tracking: 'none' },
+      { url: 'https://with-tracking.com', tracking: 'yes' },
+      { url: 'https://no-tracking-field.com' },
+    ],
   },
-  137: {
-    rpcs: [
-      { url: "https://polygon.llamarpc.com", tracking: "none" }
-    ]
-  }
-}
-export const privacyStatement = "We collect minimal data"`
+  {
+    chainId: 137,
+    rpc: [{ url: 'https://polygon.llamarpc.com', tracking: 'none' }],
+  },
+]
 
-const CHAINLIST_URL = 'https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.js'
+const CHAINLIST_URL = 'https://chainlist.org/rpcs.json'
 
 function urls(candidates: RpcCandidate[]): string[] {
   return candidates.map((c) => c.url)
@@ -32,7 +31,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('fetches from the correct URL', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) })
+    const mockFetch = vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) })
     vi.stubGlobal('fetch', mockFetch)
 
     await fetchRpcUrls([1])
@@ -41,7 +40,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('extracts all https URLs regardless of tracking', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([1])
 
@@ -54,7 +53,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('filters out non-https URLs', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([1])
 
@@ -62,7 +61,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('sorts URLs by tracking: none first, limited second, yes/missing last', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([1])
 
@@ -74,8 +73,8 @@ describe('fetchRpcUrls', () => {
     }
   })
 
-  it('includes RPCs that are plain strings (not objects)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+  it('includes RPCs that have no tracking field', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([1])
 
@@ -83,7 +82,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('includes RPCs with no tracking field, tracking = undefined', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([1])
 
@@ -93,7 +92,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('returns empty array for unknown chainIds', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([999])
 
@@ -101,7 +100,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('handles multiple chainIds', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([1, 137])
 
@@ -119,7 +118,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('returns empty Record for empty chainIds array', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([])
 
@@ -127,7 +126,7 @@ describe('fetchRpcUrls', () => {
   })
 
   it('includes hardcoded RPCs for chains not in chainlist', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: () => Promise.resolve(SAMPLE_JS) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve(SAMPLE_JSON) }))
 
     const result = await fetchRpcUrls([73799])
 

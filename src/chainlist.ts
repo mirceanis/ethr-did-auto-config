@@ -1,9 +1,6 @@
-import { writeFileSync, mkdtempSync } from 'fs'
-import { join } from 'path'
-import { tmpdir } from 'os'
 import { trackingRank } from './shared.js'
 
-const CHAINLIST_URL = 'https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.js'
+const CHAINLIST_URL = 'https://chainlist.org/rpcs.json'
 
 const HARDCODED_RPCS: Record<number, string[]> = {
   73799: ['https://volta-rpc.energyweb.org'],
@@ -19,33 +16,21 @@ export async function fetchRpcUrls(chainIds: number[]): Promise<Record<number, R
 
   try {
     const response = await fetch(CHAINLIST_URL)
-    const js = await response.text()
+    const chains = (await response.json()) as { chainId: number; rpc: { url: string; tracking?: string }[] }[]
 
-    const tmpDir = mkdtempSync(join(tmpdir(), 'chainlist-'))
-    const tmpFile = join(tmpDir, 'extraRpcs.mjs')
-    writeFileSync(tmpFile, js)
-    const mod = await import(tmpFile)
-    import('fs/promises').then(fs => fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {}))
-
-    const extraRpcs: Record<number, { rpcs: { url: string; tracking: string }[] }> = mod.extraRpcs
+    const chainMap = new Map(chains.map((c) => [c.chainId, c.rpc]))
 
     const result: Record<number, RpcCandidate[]> = {}
     for (const chainId of chainIds) {
-      const chainData = extraRpcs[chainId]
-      if (!chainData) {
+      const rpcs = chainMap.get(chainId)
+      if (!rpcs) {
         result[chainId] = []
         continue
       }
-      result[chainId] = chainData.rpcs
-        .filter((rpc: any) => {
-          const url = typeof rpc === 'string' ? rpc : rpc.url
-          return typeof url === 'string' && url.startsWith('https://')
-        })
-        .map((rpc: any) => {
-          if (typeof rpc === 'string') return { url: rpc, tracking: undefined }
-          return { url: rpc.url, tracking: rpc.tracking }
-        })
-        .sort((a: RpcCandidate, b: RpcCandidate) => trackingRank(a.tracking) - trackingRank(b.tracking))
+      result[chainId] = rpcs
+        .filter((rpc) => typeof rpc.url === 'string' && rpc.url.startsWith('https://'))
+        .map((rpc) => ({ url: rpc.url, tracking: rpc.tracking }))
+        .sort((a, b) => trackingRank(a.tracking) - trackingRank(b.tracking))
     }
     for (const chainId of chainIds) {
       const hardcoded = HARDCODED_RPCS[chainId]
