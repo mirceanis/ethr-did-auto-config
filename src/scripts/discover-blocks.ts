@@ -2,7 +2,7 @@
 import { writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { discoverBlocks } from '../src/discover-blocks.js'
+import { discoverBlocks } from '../discover-blocks'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

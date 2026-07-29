@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { probeEndpoints } from '../src/probe.js'
+import { probeEndpoints } from '../probe'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -14,9 +14,13 @@ const TEST_BLOCKS_PATH = resolve(__dirname, '..', 'src', 'test-blocks.ts')
 const GRADUATE = 2
 const EXPEL = -5
 
+function loadJSON<T>(path: string): T | null {
+  if (!existsSync(path)) return null
+  return JSON.parse(readFileSync(path, 'utf-8'))
+}
+
 function loadHistory(): Record<number, Record<string, number>> {
-  if (!existsSync(HISTORY_PATH)) return {}
-  return JSON.parse(readFileSync(HISTORY_PATH, 'utf-8'))
+  return loadJSON<Record<number, Record<string, number>>>(HISTORY_PATH) ?? {}
 }
 
 function saveHistory(h: Record<number, Record<string, number>>) {
@@ -27,11 +31,10 @@ function loadTestBlocks(path: string): Record<number, number> {
   const src = readFileSync(path, 'utf-8')
   const m = src.match(/\{([^}]+)\}/)
   if (!m) return {}
-  const pairs = m[1].trim().split('\n').map(l => l.trim()).filter(Boolean)
   const result: Record<number, number> = {}
-  for (const p of pairs) {
-    const [k, v] = p.replace(/,?$/, '').split(':').map(s => s.trim())
-    result[Number(k)] = Number(v)
+  for (const line of m[1].trim().split('\n')) {
+    const parts = line.trim().replace(/,?$/, '').split(':').map(s => s.trim())
+    if (parts.length === 2) result[Number(parts[0])] = Number(parts[1])
   }
   return result
 }
@@ -42,28 +45,71 @@ function formatTestBlocks(blocks: Record<number, number>): string {
   return `export const TEST_BLOCKS: Record<number, number> = {\n${body}\n} as const\n`
 }
 
-function summarize(history: Record<number, Record<string, number>>): Record<string, { added: number; removed: number }> {
-  const s: Record<string, { added: number; removed: number }> = {}
-  for (const [cid, urls] of Object.entries(history)) {
-    const name = cid
-    let added = 0, removed = 0
-    for (const count of Object.values(urls)) {
-      if (count >= GRADUATE) added++
-      if (count <= EXPEL) removed++
+function computeEffective(
+  previousUrls: Record<number, string[]>,
+  history: Record<number, Record<string, number>>,
+): Record<number, string[]> {
+  const result: Record<number, string[]> = {}
+  const allChainIds = new Set([
+    ...Object.keys(previousUrls).map(Number),
+    ...Object.keys(history).map(Number),
+  ])
+  for (const cid of allChainIds) {
+    const prev = previousUrls[cid] ?? []
+    const chainHistory = history[cid] ?? {}
+    const include = new Set<string>()
+
+    for (const [url, count] of Object.entries(chainHistory)) {
+      if (count >= GRADUATE) include.add(url)
     }
-    s[name] = { added, removed }
+    for (const url of prev) {
+      const count = chainHistory[url] ?? 0
+      if (count > EXPEL) include.add(url)
+    }
+
+    if (include.size === 0) continue
+    const urls: string[] = []
+    const seen = new Set<string>()
+    for (const url of prev) {
+      if (include.has(url)) { urls.push(url); seen.add(url) }
+    }
+    for (const url of include) {
+      if (!seen.has(url)) urls.push(url)
+    }
+    result[cid] = urls
   }
-  return s
+  return result
 }
 
-function logDiff(
+function hasRealChanges(
+  cur: Record<number, string[]>,
+  prev: Record<number, string[]>,
+  history: Record<number, Record<string, number>>,
+): boolean {
+  const allCids = new Set([
+    ...Object.keys(prev).map(Number),
+    ...Object.keys(cur).map(Number),
+  ])
+  for (const cid of allCids) {
+    const curUrls = new Set(cur[cid] ?? [])
+    const prevUrls = prev[cid] ?? []
+    if (prevUrls.length !== curUrls.size) return true
+    if (!prevUrls.every(u => curUrls.has(u))) return true
+  }
+  return false
+}
+
+function printDiff(
   prev: Record<number, string[]>,
   cur: Record<number, string[]>,
   testBlocks: Record<number, number>,
 ) {
-  const chainIds = new Set([...Object.keys(prev), ...Object.keys(cur)].map(Number))
+  const allCids = new Set([
+    ...Object.keys(prev).map(Number),
+    ...Object.keys(cur).map(Number),
+  ])
   let hasChanges = false
-  for (const cid of chainIds) {
+  for (const cid of allCids) {
     const prevUrls = prev[cid] ?? []
     const curUrls = cur[cid] ?? []
     const added = curUrls.filter(u => !prevUrls.includes(u))
@@ -76,14 +122,27 @@ function logDiff(
     }
   }
   if (!hasChanges) console.log('  no RPC changes')
-  const newBlocks = Object.entries(testBlocks).filter(([k]) => !prev[k])
+  const newBlocks = Object.entries(testBlocks).filter(([k]) => !prev[Number(k)])
   if (newBlocks.length > 0) {
     console.log(`  new networks discovered: ${newBlocks.map(([k, v]) => `${k}@${v}`).join(', ')}`)
   }
 }
 
+function summarize(history: Record<number, Record<string, number>>): Record<string, { added: number; removed: number }> {
+  const s: Record<string, { added: number; removed: number }> = {}
+  for (const [cid, urls] of Object.entries(history)) {
+    let added = 0, removed = 0
+    for (const count of Object.values(urls)) {
+      if (count >= GRADUATE) added++
+      if (count <= EXPEL) removed++
+    }
+    s[cid] = { added, removed }
+  }
+  return s
+}
+
 async function main() {
-  const { workingUrls, testBlocks, allResults, candidates } = await probeEndpoints()
+  const { testBlocks, allResults, candidates } = await probeEndpoints()
 
   const history = loadHistory()
 
@@ -111,58 +170,46 @@ async function main() {
 
   saveHistory(history)
 
-  const graduated: Record<number, string[]> = {}
-  for (const cidStr of Object.keys(history)) {
-    const cid = Number(cidStr)
-    const urls = Object.entries(history[cid])
-      .filter(([_, count]) => count >= GRADUATE)
-      .map(([url]) => url)
-      .sort()
-    if (urls.length > 0) graduated[cid] = urls
-  }
-
-  const previousUrls: Record<number, string[]> = existsSync(RPC_URLS_PATH)
-    ? JSON.parse(readFileSync(RPC_URLS_PATH, 'utf-8'))
-    : {}
-
-  const prevUrlsJson = JSON.stringify(previousUrls, Object.keys(previousUrls).sort())
-  const curUrlsJson = JSON.stringify(graduated, Object.keys(graduated).sort())
-  const urlsChanged = prevUrlsJson !== curUrlsJson
+  const previousUrls: Record<number, string[]> = loadJSON<Record<number, string[]>>(RPC_URLS_PATH) ?? {}
+  const effective = computeEffective(previousUrls, history)
 
   const prevTestBlocks: Record<number, number> = existsSync(TEST_BLOCKS_PATH)
     ? loadTestBlocks(TEST_BLOCKS_PATH)
     : {}
-  const testBlocksChanged =
+  const tbChanged =
     JSON.stringify(prevTestBlocks, Object.keys(prevTestBlocks).sort()) !==
     JSON.stringify(testBlocks, Object.keys(testBlocks).sort())
 
-  if (!urlsChanged && !testBlocksChanged) {
-    console.log('No meaningful changes — graduated RPC set is identical to current rpcUrls.json')
+  const urlsChanged = hasRealChanges(effective, previousUrls, history)
+
+  if (!urlsChanged && !tbChanged) {
+    console.log('No meaningful changes')
     console.log(`HISTORY_SUMMARY=${JSON.stringify(summarize(history))}`)
     return
   }
 
   if (urlsChanged) {
-    writeFileSync(RPC_URLS_PATH, JSON.stringify(graduated, null, 2) + '\n')
+    writeFileSync(RPC_URLS_PATH, JSON.stringify(effective, null, 2) + '\n')
     console.log(`Probe: written to ${RPC_URLS_PATH}`)
   }
-  if (testBlocksChanged) {
+  if (tbChanged) {
     writeFileSync(TEST_BLOCKS_PATH, formatTestBlocks(testBlocks))
     console.log(`Probe: wrote ${Object.keys(testBlocks).length} test blocks to ${TEST_BLOCKS_PATH}`)
   }
 
-  logDiff(previousUrls, graduated, testBlocks)
-  const commitType = testBlocksChanged ? 'feat' : 'fix'
-  const newNetworks = Object.entries(testBlocks).filter(([k]) => !prevTestBlocks[k])
-  const commitMsg = testBlocksChanged
+  printDiff(previousUrls, effective, testBlocks)
+  const newNetworks = Object.entries(testBlocks).filter(([k]) => !prevTestBlocks[Number(k)])
+  const commitMsg = tbChanged
     ? `feat: discover ${newNetworks.map(([k, v]) => `chain ${k}`).join(', ')}`
     : 'fix: updated RPC endpoints'
-  console.log(`COMMIT_TYPE=${commitType}`)
   console.log(`COMMIT_MSG=${commitMsg}`)
   console.log(`HISTORY_SUMMARY=${JSON.stringify(summarize(history))}`)
 }
 
-main().catch((e) => {
-  console.error('Probe failed:', e)
-  process.exit(1)
-})
+main().then(
+  () => process.exit(0),
+  (e) => {
+    console.error('Probe failed:', e)
+    process.exit(1)
+  },
+)

@@ -8,8 +8,8 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "probe": "tsx scripts/probe.ts",
-    "discover-blocks": "tsx scripts/discover-blocks.ts",
+    "probe": "tsx src/scripts/probe.ts",
+    "discover-blocks": "tsx src/scripts/discover-blocks.ts",
     "release": "semantic-release --debug"
   },
   "dependencies": {

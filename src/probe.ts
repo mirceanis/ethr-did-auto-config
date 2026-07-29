@@ -10,14 +10,6 @@ function getRegistry(chainId: number): string {
   return deployments.find((d) => Number(d.chainId) === chainId)?.registry ?? ''
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error('timeout')), ms)
-  })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
-}
-
 function trackingRank(t: string | undefined): number {
   return t === 'none' ? 0 : t === 'limited' ? 1 : 2
 }
@@ -63,10 +55,7 @@ export async function probeEndpoints(): Promise<ProbeResult> {
     chainCandidates.map(async (candidate, index) => {
       const url = candidate.url
       try {
-        const result = await withTimeout(
-          testRpcUrl(Number(chainId), url, getRegistry(Number(chainId)), PROBE_TIMEOUT, testBlocks),
-          PROBE_TIMEOUT,
-        )
+        const result = await testRpcUrl(Number(chainId), url, getRegistry(Number(chainId)), PROBE_TIMEOUT, testBlocks)
         const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
         const icon = result.ok ? 'OK' : 'FAIL'
         console.log(`  ${icon} [${name}] ${url} (${result.latencyMs.toFixed(0)}ms)`)
