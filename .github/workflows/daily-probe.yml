@@ -1,0 +1,58 @@
+name: daily probe
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Restore RPC history cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: src/generated/rpcHistory.json
+          key: rpc-history-${{ github.run_id }}
+          restore-keys: |
+            rpc-history-
+
+      - name: Ensure rpcHistory.json exists
+        run: mkdir -p src/generated && touch src/generated/rpcHistory.json
+
+      - name: Run probe
+        id: probe
+        run: |
+          npx tsx scripts/probe.ts 2>&1 | tee /tmp/probe_out.txt
+          echo "commit_type=$(grep -oP 'COMMIT_TYPE=\K\w+' /tmp/probe_out.txt)" >> "$GITHUB_OUTPUT"
+          echo "commit_msg=$(grep -oP 'COMMIT_MSG=\K.*' /tmp/probe_out.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Check for generated file changes
+        id: diff
+        run: |
+          if git diff --quiet HEAD -- src/generated/rpcUrls.json src/test-blocks.ts 2>/dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name 'ethr-did-auto-config bot'
+          git config user.email 'bot@ethr-did-auto-config'
+          git add src/generated/rpcUrls.json src/test-blocks.ts
+          git commit -m "${{ steps.probe.outputs.commit_msg }}"
+          git push

@@ -10,4 +10,4 @@ export { testRpcUrl } from './rpcTester.js'
 export type { RpcTestResult } from './rpcTester.js'
 
 export { probeEndpoints } from './probe.js'
-export type { ProbeResult } from './probe.js'
+export type { ProbeResult, TestRecord } from './probe.js'

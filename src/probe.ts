@@ -22,9 +22,20 @@ function trackingRank(t: string | undefined): number {
   return t === 'none' ? 0 : t === 'limited' ? 1 : 2
 }
 
+export type TestRecord = {
+  chainId: number
+  url: string
+  ok: boolean
+  latencyMs: number
+  tracking: string | undefined
+  index: number
+}
+
 export type ProbeResult = {
   workingUrls: Record<number, string[]>
   testBlocks: Record<number, number>
+  allResults: TestRecord[]
+  candidates: Record<number, RpcCandidate[]>
 }
 
 export async function probeEndpoints(): Promise<ProbeResult> {
@@ -48,7 +59,6 @@ export async function probeEndpoints(): Promise<ProbeResult> {
   }
 
   console.log('Probe: testing each URL for connectivity + archival access...')
-  type TestResult = { chainId: number; url: string; ok: boolean; latencyMs: number; tracking: string | undefined; index: number }
   const tests = Object.entries(candidates).flatMap(([chainId, chainCandidates]: [string, RpcCandidate[]]) =>
     chainCandidates.map(async (candidate, index) => {
       const url = candidate.url
@@ -75,10 +85,10 @@ export async function probeEndpoints(): Promise<ProbeResult> {
       }
     }),
   )
-  const results: TestResult[] = await Promise.all(tests)
+  const allResults: TestRecord[] = await Promise.all(tests)
 
   const byChain = new Map<number, Array<{ url: string; latencyMs: number; tracking: string | undefined; index: number }>>()
-  for (const r of results) {
+  for (const r of allResults) {
     if (!r.ok) continue
     const items = byChain.get(r.chainId) ?? []
     items.push({ url: r.url, latencyMs: r.latencyMs, tracking: r.tracking, index: r.index })
@@ -102,5 +112,5 @@ export async function probeEndpoints(): Promise<ProbeResult> {
     for (const url of urls) console.log(`    ${url}`)
   }
 
-  return { workingUrls, testBlocks }
+  return { workingUrls, testBlocks, allResults, candidates }
 }
