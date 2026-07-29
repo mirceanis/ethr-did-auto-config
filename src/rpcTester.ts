@@ -1,10 +1,6 @@
-import {FetchRequest, JsonRpcProvider, Network, id} from 'ethers'
-import {TEST_BLOCKS} from "./test-blocks";
-
-const DID_OWNER_CHANGED = id('DIDOwnerChanged(address,address,uint256)')
-const DID_DELEGATE_CHANGED = id('DIDDelegateChanged(address,bytes32,address,uint256,uint256)')
-const DID_ATTRIBUTE_CHANGED = id('DIDAttributeChanged(address,bytes32,bytes,uint256,uint256)')
-const DID_EVENT_TOPICS = [DID_OWNER_CHANGED, DID_DELEGATE_CHANGED, DID_ATTRIBUTE_CHANGED]
+import { FetchRequest, JsonRpcProvider, Network } from 'ethers'
+import { TEST_BLOCKS } from "./test-blocks";
+import { DID_EVENT_TOPICS } from './shared.js'
 
 export type RpcTestResult = {
   chainId: number

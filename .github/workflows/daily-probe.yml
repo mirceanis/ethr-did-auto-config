@@ -35,8 +35,7 @@ jobs:
       - name: Run probe
         id: probe
         run: |
-          npx tsx scripts/probe.ts 2>&1 | tee /tmp/probe_out.txt
-          echo "commit_type=$(grep -oP 'COMMIT_TYPE=\K\w+' /tmp/probe_out.txt)" >> "$GITHUB_OUTPUT"
+          pnpm probe 2>&1 | tee /tmp/probe_out.txt
           echo "commit_msg=$(grep -oP 'COMMIT_MSG=\K.*' /tmp/probe_out.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Check for generated file changes

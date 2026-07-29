@@ -1,6 +1,6 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {testRpcUrl} from './rpcTester.js'
-import {FetchRequest, JsonRpcProvider} from 'ethers'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { testRpcUrl } from './rpcTester.js'
+import { FetchRequest, JsonRpcProvider } from 'ethers'
 
 vi.mock('ethers', async () => {
   const actual = await vi.importActual('ethers')

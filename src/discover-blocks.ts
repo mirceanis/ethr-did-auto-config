@@ -2,18 +2,10 @@ import { deployments } from 'ethr-did-resolver'
 import { FetchRequest, JsonRpcProvider, Network, id } from 'ethers'
 import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
 import { TEST_BLOCKS as EXISTING_TEST_BLOCKS } from './test-blocks.js'
+import { DID_EVENT_TOPICS, getRegistry } from './shared.js'
 
 const RPC_TIMEOUT = 10_000
 const MAX_RETRIES = 3
-
-const DID_OWNER_CHANGED = id('DIDOwnerChanged(address,address,uint256)')
-const DID_DELEGATE_CHANGED = id('DIDDelegateChanged(address,bytes32,address,uint256,uint256)')
-const DID_ATTRIBUTE_CHANGED = id('DIDAttributeChanged(address,bytes32,bytes,uint256,uint256)')
-const DID_EVENT_TOPICS = [DID_OWNER_CHANGED, DID_DELEGATE_CHANGED, DID_ATTRIBUTE_CHANGED]
-
-function getRegistry(chainId: number): string {
-  return deployments.find((d) => Number(d.chainId) === chainId)?.registry ?? ''
-}
 
 function createProvider(url: string, chainId: number): JsonRpcProvider {
   const req = new FetchRequest(url)
@@ -30,23 +22,6 @@ function isNonRetriable(err: any): boolean {
   if (code === 'TIMEOUT' || msg.includes('timeout')) return true
   if (code === 'SERVER_ERROR' && msg.includes('enotfound')) return true
   if (msg.includes('enotfound') || msg.includes('getaddrinfo')) return true
-  return false
-}
-
-function isRangeError(err: any): boolean {
-  if (err.code === 4444) return true
-  if (err.code === -32005) return true
-  if (err.code === -32000) {
-    const msg = (err.message ?? '').toLowerCase()
-    return (
-      msg.includes('range') ||
-      msg.includes('more than') ||
-      msg.includes('results') ||
-      msg.includes('limit') ||
-      msg.includes('too many') ||
-      msg.includes('exceeds')
-    )
-  }
   return false
 }
 
@@ -145,16 +120,6 @@ async function findFirstEventBlock(
   return null
 }
 
-async function findDidEventBlock(
-  provider: JsonRpcProvider,
-  registry: string,
-  fromBlock: number,
-  toBlock: number,
-  log = '',
-): Promise<number | null> {
-  return findFirstEventBlock(provider, registry, fromBlock, toBlock, DID_EVENT_TOPICS, log)
-}
-
 async function discoverBlockForChain(
   chainId: number,
   registry: string,
@@ -200,7 +165,7 @@ async function discoverBlockForChain(
       }
 
       console.log(`${log}  phase 2/2: searching for DID events from block ${deployBlock} to ${currentBlock}`)
-      const didBlock = await findDidEventBlock(provider, registry, deployBlock, currentBlock, log)
+      const didBlock = await findFirstEventBlock(provider, registry, deployBlock, currentBlock, DID_EVENT_TOPICS, log)
       if (didBlock !== null) {
         console.log(`${log}  phase 2 complete: DID event block = ${didBlock}`)
         return didBlock

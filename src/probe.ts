@@ -3,16 +3,9 @@ import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
 import { testRpcUrl } from './rpcTester.js'
 import { discoverBlocks } from './discover-blocks.js'
 import { TEST_BLOCKS } from './test-blocks.js'
+import { getRegistry, trackingRank } from './shared.js'
 
 const PROBE_TIMEOUT = 5_000
-
-function getRegistry(chainId: number): string {
-  return deployments.find((d) => Number(d.chainId) === chainId)?.registry ?? ''
-}
-
-function trackingRank(t: string | undefined): number {
-  return t === 'none' ? 0 : t === 'limited' ? 1 : 2
-}
 
 export type TestRecord = {
   chainId: number

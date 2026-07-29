@@ -1,6 +1,7 @@
 import { writeFileSync, mkdtempSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { trackingRank } from './shared.js'
 
 const CHAINLIST_URL = 'https://raw.githubusercontent.com/DefiLlama/chainlist/main/constants/extraRpcs.js'
 
@@ -44,10 +45,7 @@ export async function fetchRpcUrls(chainIds: number[]): Promise<Record<number, R
           if (typeof rpc === 'string') return { url: rpc, tracking: undefined }
           return { url: rpc.url, tracking: rpc.tracking }
         })
-        .sort((a: RpcCandidate, b: RpcCandidate) => {
-          const rank = (t: string | undefined) => (t === 'none' ? 0 : t === 'limited' ? 1 : 2)
-          return rank(a.tracking) - rank(b.tracking)
-        })
+        .sort((a: RpcCandidate, b: RpcCandidate) => trackingRank(a.tracking) - trackingRank(b.tracking))
     }
     for (const chainId of chainIds) {
       const hardcoded = HARDCODED_RPCS[chainId]

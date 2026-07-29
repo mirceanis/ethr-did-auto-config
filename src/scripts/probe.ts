@@ -3,13 +3,14 @@ import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { probeEndpoints } from '../probe'
+import { formatTestBlocks } from '../shared.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-const HISTORY_PATH = resolve(__dirname, '..', 'src', 'generated', 'rpcHistory.json')
-const RPC_URLS_PATH = resolve(__dirname, '..', 'src', 'generated', 'rpcUrls.json')
-const TEST_BLOCKS_PATH = resolve(__dirname, '..', 'src', 'test-blocks.ts')
+const HISTORY_PATH = resolve(__dirname, '..', 'generated', 'rpcHistory.json')
+const RPC_URLS_PATH = resolve(__dirname, '..', 'generated', 'rpcUrls.json')
+const TEST_BLOCKS_PATH = resolve(__dirname, '..', 'test-blocks.ts')
 
 const GRADUATE = 2
 const EXPEL = -5
@@ -37,12 +38,6 @@ function loadTestBlocks(path: string): Record<number, number> {
     if (parts.length === 2) result[Number(parts[0])] = Number(parts[1])
   }
   return result
-}
-
-function formatTestBlocks(blocks: Record<number, number>): string {
-  const chainIds = Object.keys(blocks).map(Number).sort((a, b) => a - b)
-  const body = chainIds.map((id) => `    ${id}: ${blocks[id]},`).join('\n')
-  return `export const TEST_BLOCKS: Record<number, number> = {\n${body}\n} as const\n`
 }
 
 function computeEffective(
