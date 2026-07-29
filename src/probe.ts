@@ -48,9 +48,9 @@ export async function probeEndpoints(): Promise<ProbeResult> {
   }
 
   console.log('Probe: testing each URL for connectivity + archival access...')
-  type TestResult = { chainId: number; url: string; ok: boolean; latencyMs: number; tracking: string | undefined }
+  type TestResult = { chainId: number; url: string; ok: boolean; latencyMs: number; tracking: string | undefined; index: number }
   const tests = Object.entries(candidates).flatMap(([chainId, chainCandidates]: [string, RpcCandidate[]]) =>
-    chainCandidates.map(async (candidate) => {
+    chainCandidates.map(async (candidate, index) => {
       const url = candidate.url
       try {
         const result = await withTimeout(
@@ -60,7 +60,7 @@ export async function probeEndpoints(): Promise<ProbeResult> {
         const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
         const icon = result.ok ? 'OK' : 'FAIL'
         console.log(`  ${icon} [${name}] ${url} (${result.latencyMs.toFixed(0)}ms)`)
-        return { ...result, tracking: candidate.tracking }
+        return { ...result, tracking: candidate.tracking, index }
       } catch {
         const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
         console.log(`  FAIL [${name}] ${url} (timeout >${PROBE_TIMEOUT}ms)`)
@@ -70,17 +70,18 @@ export async function probeEndpoints(): Promise<ProbeResult> {
           ok: false,
           latencyMs: PROBE_TIMEOUT,
           tracking: candidate.tracking,
+          index,
         }
       }
     }),
   )
   const results: TestResult[] = await Promise.all(tests)
 
-  const byChain = new Map<number, Array<{ url: string; latencyMs: number; tracking: string | undefined }>>()
+  const byChain = new Map<number, Array<{ url: string; latencyMs: number; tracking: string | undefined; index: number }>>()
   for (const r of results) {
     if (!r.ok) continue
     const items = byChain.get(r.chainId) ?? []
-    items.push({ url: r.url, latencyMs: r.latencyMs, tracking: r.tracking })
+    items.push({ url: r.url, latencyMs: r.latencyMs, tracking: r.tracking, index: r.index })
     byChain.set(r.chainId, items)
   }
 
@@ -89,7 +90,7 @@ export async function probeEndpoints(): Promise<ProbeResult> {
     items.sort((a, b) => {
       const diff = trackingRank(a.tracking) - trackingRank(b.tracking)
       if (diff !== 0) return diff
-      return a.latencyMs - b.latencyMs
+      return a.index - b.index
     })
     workingUrls[chainId] = items.map((i) => i.url)
   }

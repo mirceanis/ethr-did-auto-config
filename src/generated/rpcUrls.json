@@ -1,7 +1,7 @@
 {
   "1": [
-    "https://rpc.mevblocker.io",
     "https://one.valve.city/rpc/vk_demo/evm/1",
+    "https://rpc.mevblocker.io",
     "https://eth.drpc.org",
     "https://eth.blockrazor.xyz",
     "https://ethereum-json-rpc.stakely.io",
@@ -13,32 +13,26 @@
     "https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7",
     "https://mainnet.gateway.tenderly.co",
     "https://gateway.tenderly.co/public/mainnet",
-    "https://ethereum-mainnet.gateway.tatum.io",
-    "https://eth1.lava.build",
-    "https://services.tokenview.io/vipapi/nodeservice/eth?apikey=qVHq2o6jpaakcw3lRstl",
     "https://public-eth.nownodes.io",
+    "https://eth1.lava.build",
     "https://rpc-eth.blockmachine.io"
   ],
   "100": [
     "https://gnosis.drpc.org",
     "https://public-gno-mainnet.fastnode.io",
-    "https://rpc.gnosis.gateway.fm",
     "https://rpc.gnosischain.com",
-    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
-    "https://gno-mainnet.gateway.tatum.io"
+    "https://rpc.gnosis.gateway.fm",
+    "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet"
   ],
   "137": [
     "https://polygon.drpc.org",
     "https://poly.api.pocket.network",
     "https://rpc.private.mev-x.com/polygon",
-    "https://rpc.sentio.xyz/matic",
     "https://matic.rpc.sentio.xyz",
-    "https://polygon.api.onfinality.io/public",
-    "https://gateway.tenderly.co/public/polygon",
+    "https://rpc-mainnet.matic.quiknode.pro",
     "https://polygon.gateway.tenderly.co",
-    "https://polygon.lava.build",
-    "https://polygon-mainnet.gateway.tatum.io",
-    "https://rpc-mainnet.matic.quiknode.pro"
+    "https://gateway.tenderly.co/public/polygon",
+    "https://polygon-mainnet.gateway.tatum.io"
   ],
   "246": [
     "https://rpc.energyweb.org"
@@ -47,11 +41,11 @@
     "https://volta-rpc.energyweb.org"
   ],
   "11155111": [
-    "https://ethereum-sepolia-public.nodies.app",
     "https://eth-sepolia.api.onfinality.io/public",
+    "https://ethereum-sepolia-public.nodies.app",
     "https://sepolia.rpc.sentio.xyz",
-    "https://gateway.tenderly.co/public/sepolia",
-    "https://sepolia.gateway.tenderly.co"
+    "https://sepolia.gateway.tenderly.co",
+    "https://gateway.tenderly.co/public/sepolia"
   ],
   "1313161554": [
     "https://aurora.drpc.org",

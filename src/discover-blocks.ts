@@ -4,6 +4,7 @@ import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
 import { TEST_BLOCKS as EXISTING_TEST_BLOCKS } from './test-blocks.js'
 
 const RPC_TIMEOUT = 10_000
+const MAX_RETRIES = 3
 
 const DID_OWNER_CHANGED = id('DIDOwnerChanged(address,address,uint256)')
 const DID_DELEGATE_CHANGED = id('DIDDelegateChanged(address,bytes32,address,uint256,uint256)')
@@ -20,6 +21,16 @@ function createProvider(url: string, chainId: number): JsonRpcProvider {
   return new JsonRpcProvider(req, chainId, {
     staticNetwork: Network.from(chainId),
   })
+}
+
+function isNonRetriable(err: any): boolean {
+  if (!err) return false
+  const code = err.code ?? ''
+  const msg = String(err.message ?? '').toLowerCase()
+  if (code === 'TIMEOUT' || msg.includes('timeout')) return true
+  if (code === 'SERVER_ERROR' && msg.includes('enotfound')) return true
+  if (msg.includes('enotfound') || msg.includes('getaddrinfo')) return true
+  return false
 }
 
 function isRangeError(err: any): boolean {
@@ -60,6 +71,7 @@ async function bisectDeployBlock(
         low = mid + 1
       }
     } catch (err) {
+      if (isNonRetriable(err)) throw err
       console.log(`${log}    bisect [${low}, ${high}] mid=${mid} -> RPC error, abandoning bisection`)
       return null
     }
@@ -72,7 +84,8 @@ async function bisectDeployBlock(
       return low
     }
     console.log(`${log}    verification failed: block ${low} has no code`)
-  } catch {
+  } catch (err) {
+    if (isNonRetriable(err)) throw err
     console.log(`${log}    verification RPC error at block ${low}`)
   }
   return null
@@ -86,38 +99,50 @@ async function findFirstEventBlock(
   topics?: string[],
   log = '',
 ): Promise<number | null> {
-  console.log(`${log}    event scan range [${low}, ${high}]`)
+  let iterations = 0
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2)
+    iterations++
+    try {
+      const params: any = {
+        address: registry.toLowerCase(),
+        fromBlock: `0x${mid.toString(16)}`,
+        toBlock: `0x${mid.toString(16)}`,
+      }
+      if (topics) params.topics = [topics]
+      const logs = await provider.send('eth_getLogs', [params])
+      if (Array.isArray(logs) && logs.length > 0) {
+        console.log(`${log}    bisect [${low}, ${high}] mid=${mid} -> ${logs.length} event(s) FOUND, narrowing high`)
+        high = mid
+      } else {
+        console.log(`${log}    bisect [${low}, ${high}] mid=${mid} -> 0 events, advancing low`)
+        low = mid + 1
+      }
+    } catch (err: any) {
+      if (isNonRetriable(err)) throw err
+      console.log(`${log}    bisect [${low}, ${high}] mid=${mid} -> error, abandoning bisection`)
+      return null
+    }
+  }
+  console.log(`${log}    bisect converged on block ${low} after ${iterations} iteration(s), verifying...`)
   try {
     const params: any = {
       address: registry.toLowerCase(),
       fromBlock: `0x${low.toString(16)}`,
-      toBlock: `0x${high.toString(16)}`,
+      toBlock: `0x${low.toString(16)}`,
     }
     if (topics) params.topics = [topics]
     const logs = await provider.send('eth_getLogs', [params])
     if (Array.isArray(logs) && logs.length > 0) {
-      const firstBlock = Number(logs[0].blockNumber)
-      console.log(`${log}    range [${low}, ${high}] returned ${logs.length} event(s), first at block ${firstBlock}`)
-      return firstBlock
+      console.log(`${log}    verified block ${low}: ${logs.length} event(s)`)
+      return low
     }
-    console.log(`${log}    range [${low}, ${high}] returned 0 events`)
-    return null
+    console.log(`${log}    verification failed: block ${low} returned 0 events`)
   } catch (err: any) {
-    if (!isRangeError(err)) {
-      console.log(`${log}    range [${low}, ${high}] non-range error (code=${err.code}), dropping URL`)
-      return null
-    }
-    console.log(`${log}    range [${low}, ${high}] hit range error (code=${err.code}): halving`)
-    if (low >= high) {
-      console.log(`${log}    range too small to halve further, dropping URL`)
-      return null
-    }
-    const mid = Math.floor((low + high) / 2)
-    console.log(`${log}    halving to [${low}, ${mid}] and [${mid + 1}, ${high}]`)
-    const left = await findFirstEventBlock(provider, registry, low, mid, topics, log)
-    if (left !== null) return left
-    return await findFirstEventBlock(provider, registry, mid + 1, high, topics, log)
+    if (isNonRetriable(err)) throw err
+    console.log(`${log}    verification RPC error at block ${low}`)
   }
+  return null
 }
 
 async function findDidEventBlock(
@@ -136,9 +161,22 @@ async function discoverBlockForChain(
   candidates: RpcCandidate[],
   log: string,
 ): Promise<number | null> {
-  for (const candidate of candidates) {
-    console.log(`${log}  trying RPC ${candidate.url}`)
+  let deployBlock: number | null = null
+  type Entry = { candidate: RpcCandidate; retries: number }
+  const queue: Entry[] = candidates.map((c) => ({ candidate: c, retries: 0 }))
+
+  while (queue.length > 0) {
+    const { candidate, retries } = queue.shift()!
+    const label = retries > 0 ? ` (retry ${retries}/${MAX_RETRIES})` : ''
+    console.log(`${log}  trying RPC ${candidate.url}${label}`)
     const provider = createProvider(candidate.url, chainId)
+
+    const requeue = () => {
+      if (retries < MAX_RETRIES) {
+        queue.push({ candidate, retries: retries + 1 })
+      }
+    }
+
     try {
       const blockNumHex = await provider.send('eth_blockNumber', [])
       const currentBlock = Number(blockNumHex)
@@ -148,24 +186,34 @@ async function discoverBlockForChain(
       }
       console.log(`${log}  current block = ${currentBlock}`)
 
-      console.log(`${log}  phase 1/2: binary searching for registry deploy block in [0, ${currentBlock}]`)
-      const firstBlock = await bisectDeployBlock(provider, registry, 0, currentBlock, log)
-      if (firstBlock === null) {
-        console.log(`${log}  phase 1 failed: could not find deployment block, dropping URL`)
-        continue
+      if (deployBlock === null) {
+        console.log(`${log}  phase 1/2: binary searching for registry deploy block in [0, ${currentBlock}]`)
+        deployBlock = await bisectDeployBlock(provider, registry, 0, currentBlock, log)
+        if (deployBlock === null) {
+          console.log(`${log}  phase 1 failed: could not find deployment block`)
+          requeue()
+          continue
+        }
+        console.log(`${log}  phase 1 complete: first registry event at block ${deployBlock}`)
+      } else {
+        console.log(`${log}  reuse previous deploy block ${deployBlock}, skipping phase 1`)
       }
-      console.log(`${log}  phase 1 complete: first registry event at block ${firstBlock}`)
 
-      console.log(`${log}  phase 2/2: searching for DID events from block ${firstBlock} to ${currentBlock}`)
-      const didBlock = await findDidEventBlock(provider, registry, firstBlock, currentBlock, log)
+      console.log(`${log}  phase 2/2: searching for DID events from block ${deployBlock} to ${currentBlock}`)
+      const didBlock = await findDidEventBlock(provider, registry, deployBlock, currentBlock, log)
       if (didBlock !== null) {
         console.log(`${log}  phase 2 complete: DID event block = ${didBlock}`)
         return didBlock
       }
-      console.log(`${log}  phase 2 failed: no DID events found in range, dropping URL`)
+      console.log(`${log}  phase 2 failed: no DID events found in range`)
+      requeue()
     } catch (err) {
-      console.log(`${log}  unexpected error on ${candidate.url}, dropping URL: ${err}`)
-      continue
+      if (isNonRetriable(err)) {
+        console.log(`${log}  non-retriable error on ${candidate.url}, dropping: ${err}`)
+      } else {
+        console.log(`${log}  error on ${candidate.url}${retries < MAX_RETRIES ? ', re-queueing' : ', dropping'}: ${err}`)
+        requeue()
+      }
     } finally {
       provider.destroy?.()
     }
