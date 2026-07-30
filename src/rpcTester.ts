@@ -31,33 +31,25 @@ export async function testRpcUrl(
     const blocks = testBlocks ?? TEST_BLOCKS
     const testBlock = blocks[chainId]
     if (!testBlock || testBlock <= 0) {
-      provider.destroy?.()
       return { chainId, url, ok: false, latencyMs }
     }
 
-    try {
-      const logs = await provider.send('eth_getLogs', [
-        {
-          address: registry.toLowerCase(),
-          fromBlock: `0x${testBlock.toString(16)}`,
-          toBlock: `0x${testBlock.toString(16)}`,
-          topics: [DID_EVENT_TOPICS],
-        },
-      ])
-      if (!Array.isArray(logs) || logs.length === 0) {
-        provider.destroy?.()
-        return { chainId, url, ok: false, latencyMs }
-      }
-    } catch {
-      provider.destroy?.()
+    const logs = await provider.send('eth_getLogs', [
+      {
+        address: registry.toLowerCase(),
+        fromBlock: `0x${testBlock.toString(16)}`,
+        toBlock: `0x${testBlock.toString(16)}`,
+        topics: [DID_EVENT_TOPICS],
+      },
+    ])
+    if (!Array.isArray(logs) || logs.length === 0) {
       return { chainId, url, ok: false, latencyMs }
     }
 
-    provider.destroy?.()
     return { chainId, url, ok: true, latencyMs }
   } catch {
-    const latencyMs = performance.now() - start
+    return { chainId, url, ok: false, latencyMs: performance.now() - start }
+  } finally {
     provider.destroy?.()
-    return { chainId, url, ok: false, latencyMs }
   }
 }

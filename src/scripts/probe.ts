@@ -4,6 +4,7 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { probeEndpoints } from '../probe'
 import { formatTestBlocks } from '../shared.js'
+import { TEST_BLOCKS as PREV_TEST_BLOCKS } from '../test-blocks.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -26,18 +27,6 @@ function loadHistory(): Record<number, Record<string, number>> {
 
 function saveHistory(h: Record<number, Record<string, number>>) {
   writeFileSync(HISTORY_PATH, JSON.stringify(h, null, 2) + '\n')
-}
-
-function loadTestBlocks(path: string): Record<number, number> {
-  const src = readFileSync(path, 'utf-8')
-  const m = src.match(/\{([^}]+)\}/)
-  if (!m) return {}
-  const result: Record<number, number> = {}
-  for (const line of m[1].trim().split('\n')) {
-    const parts = line.trim().replace(/,?$/, '').split(':').map(s => s.trim())
-    if (parts.length === 2) result[Number(parts[0])] = Number(parts[1])
-  }
-  return result
 }
 
 function computeEffective(
@@ -168,9 +157,7 @@ async function main() {
   const previousUrls: Record<number, string[]> = loadJSON<Record<number, string[]>>(RPC_URLS_PATH) ?? {}
   const effective = computeEffective(previousUrls, history)
 
-  const prevTestBlocks: Record<number, number> = existsSync(TEST_BLOCKS_PATH)
-    ? loadTestBlocks(TEST_BLOCKS_PATH)
-    : {}
+  const prevTestBlocks = { ...PREV_TEST_BLOCKS } as Record<number, number>
   const tbChanged =
     JSON.stringify(prevTestBlocks, Object.keys(prevTestBlocks).sort()) !==
     JSON.stringify(testBlocks, Object.keys(testBlocks).sort())

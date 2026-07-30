@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -34,9 +36,16 @@ jobs:
 
       - name: Run probe
         id: probe
+        shell: bash
         run: |
+          set -euo pipefail
           pnpm probe 2>&1 | tee /tmp/probe_out.txt
-          echo "commit_msg=$(grep -oP 'COMMIT_MSG=\K.*' /tmp/probe_out.txt)" >> "$GITHUB_OUTPUT"
+          commit_msg=$(grep -oP 'COMMIT_MSG=\K.*' /tmp/probe_out.txt)
+          {
+            echo "commit_msg<<DELIM"
+            echo "$commit_msg"
+            echo "DELIM"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Check for generated file changes
         id: diff

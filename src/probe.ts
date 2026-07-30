@@ -38,8 +38,10 @@ export async function probeEndpoints(): Promise<ProbeResult> {
   const totalCandidateUrls = Object.values(candidates).reduce((sum, urls) => sum + urls.length, 0)
   console.log(`Probe: found ${totalCandidateUrls} candidate RPC URLs across ${Object.keys(candidates).length} chains`)
 
+  const chainNames = new Map(deployments.map((d) => [Number(d.chainId), d.name]))
+
   for (const [chainId, urls] of Object.entries(candidates)) {
-    const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
+    const name = chainNames.get(Number(chainId)) ?? '?'
     console.log(`  chain ${chainId} (${name}): ${urls.length} candidates`)
   }
 
@@ -49,12 +51,12 @@ export async function probeEndpoints(): Promise<ProbeResult> {
       const url = candidate.url
       try {
         const result = await testRpcUrl(Number(chainId), url, getRegistry(Number(chainId)), PROBE_TIMEOUT, testBlocks)
-        const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
+        const name = chainNames.get(Number(chainId)) ?? '?'
         const icon = result.ok ? 'OK' : 'FAIL'
         console.log(`  ${icon} [${name}] ${url} (${result.latencyMs.toFixed(0)}ms)`)
         return { ...result, tracking: candidate.tracking, index }
       } catch {
-        const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
+        const name = chainNames.get(Number(chainId)) ?? '?'
         console.log(`  FAIL [${name}] ${url} (timeout >${PROBE_TIMEOUT}ms)`)
         return {
           chainId: Number(chainId),
@@ -89,7 +91,7 @@ export async function probeEndpoints(): Promise<ProbeResult> {
 
   console.log(`Probe: ${Object.keys(workingUrls).length} chains with working RPCs`)
   for (const [chainId, urls] of Object.entries(workingUrls)) {
-    const name = deployments.find((d) => Number(d.chainId) === Number(chainId))?.name ?? '?'
+    const name = chainNames.get(Number(chainId)) ?? '?'
     console.log(`  chain ${chainId} (${name}): ${urls.length} working RPCs`)
     for (const url of urls) console.log(`    ${url}`)
   }

@@ -17,7 +17,10 @@
     "https://eth1.lava.build",
     "https://rpc-eth.blockmachine.io",
     "https://ethereum-public.nodies.app",
-    "https://ethereum-mainnet.gateway.tatum.io"
+    "https://ethereum-mainnet.gateway.tatum.io",
+    "https://rpc.mevblocker.io/fast",
+    "https://rpc.mevblocker.io/noreverts",
+    "https://rpc.mevblocker.io/fullprivacy"
   ],
   "100": [
     "https://gnosis.drpc.org",
@@ -25,7 +28,8 @@
     "https://rpc.gnosischain.com",
     "https://rpc.gnosis.gateway.fm",
     "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
-    "https://gno-mainnet.gateway.tatum.io"
+    "https://gno-mainnet.gateway.tatum.io",
+    "https://gnosis.oat.farm"
   ],
   "137": [
     "https://polygon.drpc.org",
@@ -36,7 +40,8 @@
     "https://polygon.gateway.tenderly.co",
     "https://gateway.tenderly.co/public/polygon",
     "https://polygon-mainnet.gateway.tatum.io",
-    "https://polygon.lava.build"
+    "https://polygon.lava.build",
+    "https://polygon.api.onfinality.io/public"
   ],
   "246": [
     "https://rpc.energyweb.org"
