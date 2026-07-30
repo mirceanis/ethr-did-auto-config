@@ -23,7 +23,6 @@
     "https://rpc.mevblocker.io/fullprivacy"
   ],
   "100": [
-    "https://gnosis.drpc.org",
     "https://public-gno-mainnet.fastnode.io",
     "https://rpc.gnosischain.com",
     "https://rpc.gnosis.gateway.fm",
@@ -54,7 +53,9 @@
     "https://gateway.tenderly.co/public/sepolia",
     "https://eth-sepolia.api.onfinality.io/public",
     "https://ethereum-sepolia-public.nodies.app",
-    "https://sepolia.rpc.sentio.xyz"
+    "https://sepolia.rpc.sentio.xyz",
+    "https://rpc.sepolia.ethpandaops.io",
+    "https://sepolia.drpc.org"
   ],
   "1313161554": [
     "https://aurora.drpc.org",
