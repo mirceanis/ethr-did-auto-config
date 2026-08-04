@@ -5,7 +5,7 @@ import { discoverBlocks } from './discover-blocks.js'
 import TEST_BLOCKS from './test-blocks.json'
 import { getRegistry, trackingRank } from './shared.js'
 
-const PROBE_TIMEOUT = 5_000
+const PROBE_TIMEOUT = 10_000
 
 export type TestRecord = {
   chainId: number
