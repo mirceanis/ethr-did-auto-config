@@ -75,7 +75,6 @@ function computeEffective(
 function hasRealChanges(
   cur: Record<number, string[]>,
   prev: Record<number, string[]>,
-  history: Record<number, Record<string, number>>,
 ): boolean {
   const allCids = new Set([
     ...Object.keys(prev).map(Number),
@@ -169,7 +168,7 @@ async function main() {
     JSON.stringify(prevTestBlocks, Object.keys(prevTestBlocks).sort()) !==
     JSON.stringify(testBlocks, Object.keys(testBlocks).sort())
 
-  const urlsChanged = hasRealChanges(effective, previousUrls, history)
+  const urlsChanged = hasRealChanges(effective, previousUrls)
 
   if (!urlsChanged && !tbChanged) {
     console.log('No meaningful changes')
@@ -189,7 +188,7 @@ async function main() {
   printDiff(previousUrls, effective, testBlocks)
   const newNetworks = Object.entries(testBlocks).filter(([k]) => !prevTestBlocks[Number(k)])
   const commitMsg = tbChanged
-    ? `feat: discover ${newNetworks.map(([k, v]) => `chain ${k}`).join(', ')}`
+    ? `feat: discover ${newNetworks.map(([k]) => `chain ${k}`).join(', ')}`
     : 'fix: updated RPC endpoints'
   console.log(`COMMIT_MSG=${commitMsg}`)
   console.log(`HISTORY_SUMMARY=${JSON.stringify(summarize(history))}`)

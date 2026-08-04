@@ -1,8 +1,8 @@
-import { deployments } from 'ethr-did-resolver'
-import { FetchRequest, JsonRpcProvider, Network } from 'ethers'
-import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
+import {deployments} from 'ethr-did-resolver'
+import {FetchRequest, JsonRpcProvider, Network} from 'ethers'
+import {fetchRpcUrls, RpcCandidate} from './chainlist.js'
 import EXISTING_TEST_BLOCKS from './test-blocks.json'
-import { DID_EVENT_TOPICS, getRegistry } from './shared.js'
+import {DID_EVENT_TOPICS, getRegistry} from './shared.js'
 
 const RPC_TIMEOUT = 10_000
 
@@ -214,6 +214,5 @@ export async function discoverBlocks(): Promise<Record<number, number>> {
     return existing
   }
 
-  const updated: Record<number, number> = { ...existing, ...newBlocks }
-  return updated
+  return {...existing, ...newBlocks}
 }

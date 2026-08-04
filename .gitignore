@@ -3,3 +3,6 @@
 node_modules/
 dist/
 /src/generated/rpcHistory.json
+/PRD.md
+/CONTEXT.md
+/docs/adr/ADR-*.md

@@ -19,6 +19,7 @@
     "ethr-did-resolver": "^14.1.0"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
     "did-resolver": "^5.0.1",
     "semantic-release": "^25.0.8",
     "tsx": "^4.23.1",
