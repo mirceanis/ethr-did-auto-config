@@ -1,6 +1,6 @@
 {
   "name": "ethr-did-auto-config",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "self-adjusting ethr-did-resolver configuration using public JSON-RPC endpoints",
   "type": "module",
   "main": "dist/index.js",
