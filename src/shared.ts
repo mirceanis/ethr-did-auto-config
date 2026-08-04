@@ -13,9 +13,3 @@ export function getRegistry(chainId: number): string {
 export function trackingRank(t: string | undefined): number {
   return t === 'none' ? 0 : t === 'limited' ? 1 : 2
 }
-
-export function formatTestBlocks(blocks: Record<number, number>): string {
-  const chainIds = Object.keys(blocks).map(Number).sort((a, b) => a - b)
-  const body = chainIds.map((id) => `    ${id}: ${blocks[id]},`).join('\n')
-  return `export const TEST_BLOCKS: Record<number, number> = {\n${body}\n} as const\n`
-}

@@ -1,7 +1,7 @@
 import { deployments } from 'ethr-did-resolver'
 import { FetchRequest, JsonRpcProvider, Network } from 'ethers'
 import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
-import { TEST_BLOCKS as EXISTING_TEST_BLOCKS } from './test-blocks.js'
+import EXISTING_TEST_BLOCKS from './test-blocks.json'
 import { DID_EVENT_TOPICS, getRegistry } from './shared.js'
 
 const RPC_TIMEOUT = 10_000

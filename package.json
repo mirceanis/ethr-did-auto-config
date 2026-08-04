@@ -8,9 +8,10 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "validate:generated": "tsx scripts/validate-generated.mts",
     "probe": "tsx src/scripts/probe.ts",
     "discover-blocks": "tsx src/scripts/discover-blocks.ts",
-    "release": "semantic-release --debug",
+    "release": "semantic-release",
     "resolve": "tsx src/scripts/resolve.ts"
   },
   "dependencies": {

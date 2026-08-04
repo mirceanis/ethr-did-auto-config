@@ -75,8 +75,8 @@ historical queries (indicating limited archival access).
 ## CLI Scripts
 
 ```sh
-pnpm probe            # probeEndpoints() + write test-blocks.ts + rpcUrls.json
-pnpm discover-blocks  # discoverBlocks() + write test-blocks.ts
+pnpm probe            # probeEndpoints() + write test-blocks.json + rpcUrls.json
+pnpm discover-blocks  # discoverBlocks() + write test-blocks.json
 ```
 
 Generated files are checked in so consumers don't need to probe at install time. Re-run `pnpm probe` periodically to

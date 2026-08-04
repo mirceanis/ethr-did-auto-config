@@ -5,15 +5,23 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+concurrency:
+  group: daily-probe
+  cancel-in-progress: true
+
 permissions:
+  actions: read
   contents: write
+  pull-requests: write
 
 jobs:
   probe:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -22,17 +30,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      - name: Restore RPC history cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: cache
-        with:
-          path: src/generated/rpcHistory.json
-          key: rpc-history-${{ github.run_id }}
-          restore-keys: |
-            rpc-history-
-
-      - name: Ensure rpcHistory.json exists
-        run: mkdir -p src/generated && touch src/generated/rpcHistory.json
+      - name: Restore RPC history from last successful probe
+        run: |
+          set -euo pipefail
+          run_id=$(gh run list --workflow=daily-probe.yml --branch=main --status=success --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+          mkdir -p src/generated
+          if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
+            gh run download "$run_id" -n rpc-history -D src/generated 2>/dev/null || true
+          fi
+          if [ ! -f src/generated/rpcHistory.json ]; then
+            echo '{}' > src/generated/rpcHistory.json
+          fi
 
       - name: Run probe
         id: probe
@@ -40,24 +48,59 @@ jobs:
         run: |
           set -euo pipefail
           pnpm probe 2>&1 | tee /tmp/probe_out.txt
-          commit_msg=$(grep -oP 'COMMIT_MSG=\K.*' /tmp/probe_out.txt)
+          commit_msg=$(grep -oP 'COMMIT_MSG=\K.*' /tmp/probe_out.txt || true)
+          if [ -z "$commit_msg" ]; then
+            commit_msg="chore: update RPC endpoints"
+          fi
           echo "$commit_msg" > /tmp/commit_msg.txt
 
       - name: Check for generated file changes
         id: diff
         run: |
-          if git diff --quiet HEAD -- src/generated/rpcUrls.json src/test-blocks.ts 2>/dev/null; then
+          if git diff --quiet HEAD -- src/generated/rpcUrls.json src/test-blocks.json 2>/dev/null; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit and push
+      - name: Push generated changes to bot branch
         if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           git config user.name 'ethr-did-auto-config bot'
           git config user.email 'bot@ethr-did-auto-config'
-          git add src/generated/rpcUrls.json src/test-blocks.ts
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git add src/generated/rpcUrls.json src/test-blocks.json
           COMMIT_MSG=$(cat /tmp/commit_msg.txt)
           git commit -m "$COMMIT_MSG"
-          git push
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            git rebase origin/main
+          fi
+          git fetch origin probe/auto-update:refs/remotes/origin/probe/auto-update 2>/dev/null || true
+          git push --force-with-lease origin HEAD:probe/auto-update
+
+      - name: Open or update PR with auto-merge
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMMIT_MSG=$(cat /tmp/commit_msg.txt)
+          BODY="Auto-update from the daily RPC probe: ${COMMIT_MSG}"
+          PR_NUM=$(gh pr list --head probe/auto-update --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "null" ]; then
+            gh pr edit "$PR_NUM" --title "$COMMIT_MSG" --body "$BODY"
+          else
+            PR_NUM=$(gh pr create --base main --head probe/auto-update --title "$COMMIT_MSG" --body "$BODY" --json number --jq '.number')
+          fi
+
+      - name: Save RPC history artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rpc-history
+          path: src/generated/rpcHistory.json
+          retention-days: 90

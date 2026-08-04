@@ -2,7 +2,7 @@ import { deployments } from 'ethr-did-resolver'
 import { fetchRpcUrls, RpcCandidate } from './chainlist.js'
 import { testRpcUrl } from './rpcTester.js'
 import { discoverBlocks } from './discover-blocks.js'
-import { TEST_BLOCKS } from './test-blocks.js'
+import TEST_BLOCKS from './test-blocks.json'
 import { getRegistry, trackingRank } from './shared.js'
 
 const PROBE_TIMEOUT = 5_000

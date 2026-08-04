@@ -3,18 +3,25 @@ import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { probeEndpoints } from '../probe'
-import { formatTestBlocks } from '../shared.js'
-import { TEST_BLOCKS as PREV_TEST_BLOCKS } from '../test-blocks.js'
+import PREV_TEST_BLOCKS from '../test-blocks.json'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const HISTORY_PATH = resolve(__dirname, '..', 'generated', 'rpcHistory.json')
 const RPC_URLS_PATH = resolve(__dirname, '..', 'generated', 'rpcUrls.json')
-const TEST_BLOCKS_PATH = resolve(__dirname, '..', 'test-blocks.ts')
+const TEST_BLOCKS_PATH = resolve(__dirname, '..', 'test-blocks.json')
 
 const GRADUATE = 2
 const EXPEL = -5
+
+function serializeTestBlocks(blocks: Record<number, number>): string {
+  const sorted: Record<string, number> = {}
+  for (const id of Object.keys(blocks).map(Number).sort((a, b) => a - b)) {
+    sorted[id] = blocks[id]
+  }
+  return JSON.stringify(sorted, null, 2) + '\n'
+}
 
 function loadJSON<T>(path: string): T | null {
   if (!existsSync(path)) return null
@@ -175,7 +182,7 @@ async function main() {
     console.log(`Probe: written to ${RPC_URLS_PATH}`)
   }
   if (tbChanged) {
-    writeFileSync(TEST_BLOCKS_PATH, formatTestBlocks(testBlocks))
+    writeFileSync(TEST_BLOCKS_PATH, serializeTestBlocks(testBlocks))
     console.log(`Probe: wrote ${Object.keys(testBlocks).length} test blocks to ${TEST_BLOCKS_PATH}`)
   }
 

@@ -1,5 +1,5 @@
 import { FetchRequest, JsonRpcProvider, Network } from 'ethers'
-import { TEST_BLOCKS } from "./test-blocks";
+import TEST_BLOCKS from './test-blocks.json'
 import { DID_EVENT_TOPICS } from './shared.js'
 
 export type RpcTestResult = {
@@ -28,7 +28,7 @@ export async function testRpcUrl(
     await provider.send('eth_blockNumber', [])
     const latencyMs = performance.now() - start
 
-    const blocks = testBlocks ?? TEST_BLOCKS
+    const blocks = testBlocks ?? (TEST_BLOCKS as Record<number, number>)
     const testBlock = blocks[chainId]
     if (!testBlock || testBlock <= 0) {
       return { chainId, url, ok: false, latencyMs }
