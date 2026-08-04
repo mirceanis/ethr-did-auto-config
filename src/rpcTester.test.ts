@@ -9,7 +9,7 @@ vi.mock('ethers', async () => {
     JsonRpcProvider: vi.fn(),
     FetchRequest: vi.fn(function (this: any, url: string) {
       this.url = url
-      this.timeout = 5000
+      this.timeout = 10000
     }),
   }
 })
@@ -101,9 +101,9 @@ describe('testRpcUrl', () => {
     })
     ;(JsonRpcProvider as any).mockImplementation(function () { return provider })
 
-    await testRpcUrl(1, 'https://example.com/rpc', '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b', 5_000)
+    await testRpcUrl(1, 'https://example.com/rpc', '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b', 10_000)
 
-    expect(capturedReq.timeout).toBe(5_000)
+    expect(capturedReq.timeout).toBe(10_000)
   })
 
   it('fails archival check for chains with no test block', async () => {

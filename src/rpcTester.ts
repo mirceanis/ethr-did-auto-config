@@ -13,7 +13,7 @@ export async function testRpcUrl(
   chainId: number,
   url: string,
   registry: string,
-  timeout = 5_000,
+  timeout = 10_000,
   testBlocks?: Record<number, number>,
 ): Promise<RpcTestResult> {
   const req = new FetchRequest(url)
