@@ -11,3 +11,5 @@ export type { RpcTestResult } from './rpcTester.js'
 
 export { probeEndpoints } from './probe.js'
 export type { ProbeResult, TestRecord } from './probe.js'
+
+export { FailoverProvider, buildFailoverProvider } from './failoverProvider.js'
