@@ -1,6 +1,7 @@
-import { FetchRequest, JsonRpcProvider, Network } from 'ethers'
+import { JsonRpcProvider, Network } from 'ethers'
 import TEST_BLOCKS from './test-blocks.json'
 import { DID_EVENT_TOPICS } from './shared.js'
+import { createFetchRequest } from './fetchRequest.js'
 
 export type RpcTestResult = {
   chainId: number
@@ -17,8 +18,7 @@ export async function testRpcUrl(
   timeout = 10_000,
   testBlocks?: Record<number, number>,
 ): Promise<RpcTestResult> {
-  const req = new FetchRequest(url)
-  req.timeout = timeout
+  const req = createFetchRequest(url, timeout)
   const provider = new JsonRpcProvider(req, chainId, {
     staticNetwork: Network.from(chainId),
   })

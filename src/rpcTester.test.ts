@@ -7,10 +7,15 @@ vi.mock('ethers', async () => {
   return {
     ...actual,
     JsonRpcProvider: vi.fn(),
-    FetchRequest: vi.fn(function (this: any, url: string) {
-      this.url = url
-      this.timeout = 10000
-    }),
+    FetchRequest: Object.assign(
+        vi.fn(function (this: any, url: string) {
+          this.url = url
+          this.timeout = 10000
+        }),
+        // preserve real static methods (createFetchRequest relies on them)
+        // @ts-ignore
+        { createGetUrlFunc: actual.FetchRequest.createGetUrlFunc },
+    ),
   }
 })
 
