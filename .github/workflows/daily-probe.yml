@@ -45,11 +45,11 @@ jobs:
               echo "artifact download failed; starting fresh"
             fi
           fi
-          if [ ! -f src/generated/rpcHistory.json ]; then
+          if ! jq -e . src/generated/rpcHistory.json >/dev/null 2>&1; then
             echo '{}' > src/generated/rpcHistory.json
             echo 'no prior history -> starting from {}'
           else
-            echo "rpcHistory.json present; chains=$(jq 'keys | length' src/generated/rpcHistory.json 2>/dev/null || echo '?'), records=$(jq '[.[] | length] | add' src/generated/rpcHistory.json 2>/dev/null || echo '?'), bytes=$(wc -c < src/generated/rpcHistory.json)"
+            echo "rpcHistory.json present; chains=$(jq -r 'keys | length' src/generated/rpcHistory.json 2>/dev/null || echo '?'), records=$(jq -r '([.[] | length] | add) // 0' src/generated/rpcHistory.json 2>/dev/null || echo '?'), bytes=$(wc -c < src/generated/rpcHistory.json)"
           fi
 
       - name: Run probe
