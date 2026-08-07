@@ -31,15 +31,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Restore RPC history from last successful probe
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          run_id=$(gh run list --workflow=daily-probe.yml --branch=main --status=success --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
           mkdir -p src/generated
+          run_id=$(gh run list --workflow=daily-probe.yml --branch=main --status=success --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+          echo "last successful run: ${run_id:-none}"
           if [ -n "$run_id" ] && [ "$run_id" != "null" ]; then
-            gh run download "$run_id" -n rpc-history -D src/generated 2>/dev/null || true
+            if gh run download "$run_id" -n rpc-history -D src/generated; then
+              echo "restored rpc-history from run $run_id"
+            else
+              echo "artifact download failed; starting fresh"
+            fi
           fi
-          if [ ! -f src/generated/rpcHistory.json ]; then
+          if ! jq -e . src/generated/rpcHistory.json >/dev/null 2>&1; then
             echo '{}' > src/generated/rpcHistory.json
+            echo 'no prior history -> starting from {}'
+          else
+            echo "rpcHistory.json present; chains=$(jq -r 'keys | length' src/generated/rpcHistory.json 2>/dev/null || echo '?'), records=$(jq -r '([.[] | length] | add) // 0' src/generated/rpcHistory.json 2>/dev/null || echo '?'), bytes=$(wc -c < src/generated/rpcHistory.json)"
           fi
 
       - name: Run probe
