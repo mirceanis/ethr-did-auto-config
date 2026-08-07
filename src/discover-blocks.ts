@@ -1,14 +1,14 @@
 import {deployments} from 'ethr-did-resolver'
-import {FetchRequest, JsonRpcProvider, Network} from 'ethers'
+import {JsonRpcProvider, Network} from 'ethers'
 import {fetchRpcUrls, RpcCandidate} from './chainlist.js'
 import EXISTING_TEST_BLOCKS from './test-blocks.json'
 import {DID_EVENT_TOPICS, getRegistry} from './shared.js'
+import {createFetchRequest} from './fetchRequest.js'
 
 const RPC_TIMEOUT = 10_000
 
 function createProvider(url: string, chainId: number): JsonRpcProvider {
-  const req = new FetchRequest(url)
-  req.timeout = RPC_TIMEOUT
+  const req = createFetchRequest(url, RPC_TIMEOUT)
   return new JsonRpcProvider(req, chainId, {
     staticNetwork: Network.from(chainId),
   })
