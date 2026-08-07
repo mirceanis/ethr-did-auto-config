@@ -7,6 +7,7 @@ export type RpcTestResult = {
   url: string
   ok: boolean
   latencyMs: number
+  error?: string
 }
 
 export async function testRpcUrl(
@@ -31,7 +32,7 @@ export async function testRpcUrl(
     const blocks = testBlocks ?? (TEST_BLOCKS as Record<number, number>)
     const testBlock = blocks[chainId]
     if (!testBlock || testBlock <= 0) {
-      return { chainId, url, ok: false, latencyMs }
+      return { chainId, url, ok: false, latencyMs, error: 'no test block for chain' }
     }
 
     const logs = await provider.send('eth_getLogs', [
@@ -43,12 +44,13 @@ export async function testRpcUrl(
       },
     ])
     if (!Array.isArray(logs) || logs.length === 0) {
-      return { chainId, url, ok: false, latencyMs }
+      return { chainId, url, ok: false, latencyMs, error: 'eth_getLogs returned no matching events' }
     }
 
     return { chainId, url, ok: true, latencyMs }
-  } catch {
-    return { chainId, url, ok: false, latencyMs: performance.now() - start }
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e)
+    return { chainId, url, ok: false, latencyMs: performance.now() - start, error }
   } finally {
     provider.destroy?.()
   }

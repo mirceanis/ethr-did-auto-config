@@ -14,6 +14,7 @@ export type TestRecord = {
   latencyMs: number
   tracking: string | undefined
   index: number
+  error?: string
 }
 
 export type ProbeResult = {
@@ -53,7 +54,8 @@ export async function probeEndpoints(): Promise<ProbeResult> {
         const result = await testRpcUrl(Number(chainId), url, getRegistry(Number(chainId)), PROBE_TIMEOUT, testBlocks)
         const name = chainNames.get(Number(chainId)) ?? '?'
         const icon = result.ok ? 'OK' : 'FAIL'
-        console.log(`  ${icon} [${name}] ${url} (${result.latencyMs.toFixed(0)}ms)`)
+        const err = result.error ? ` (${result.error.slice(0, 160)})` : ''
+        console.log(`  ${icon} [${name}] ${url} (${result.latencyMs.toFixed(0)}ms${err})`)
         return { ...result, tracking: candidate.tracking, index }
       } catch {
         const name = chainNames.get(Number(chainId)) ?? '?'
