@@ -20,7 +20,9 @@
     "https://ethereum-mainnet.gateway.tatum.io",
     "https://rpc.mevblocker.io/fast",
     "https://rpc.mevblocker.io/noreverts",
-    "https://rpc.mevblocker.io/fullprivacy"
+    "https://rpc.mevblocker.io/fullprivacy",
+    "https://public.1rpc.io/eth",
+    "https://eth.blocktailor.com"
   ],
   "100": [
     "https://public-gno-mainnet.fastnode.io",
@@ -28,7 +30,10 @@
     "https://rpc.gnosis.gateway.fm",
     "https://rpc.ap-southeast-1.gateway.fm/v4/gnosis/non-archival/mainnet",
     "https://gno-mainnet.gateway.tatum.io",
-    "https://gnosis.oat.farm"
+    "https://gnosis.oat.farm",
+    "https://gnosis.drpc.org",
+    "https://gnosis-rpc.publicnode.com",
+    "https://gnosis.api.pocket.network"
   ],
   "137": [
     "https://polygon.drpc.org",
@@ -55,7 +60,8 @@
     "https://ethereum-sepolia-public.nodies.app",
     "https://sepolia.rpc.sentio.xyz",
     "https://rpc.sepolia.ethpandaops.io",
-    "https://sepolia.drpc.org"
+    "https://sepolia.drpc.org",
+    "https://public.1rpc.io/sepolia"
   ],
   "1313161554": [
     "https://aurora.drpc.org",
